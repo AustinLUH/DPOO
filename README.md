@@ -27,8 +27,8 @@ The DPO logit is `z = beta * [(log π_θ(y_w) − log π_θ(y_l)) − (log π_re
 A positive `z` means the current policy prefers the chosen response over the rejected
 response *more strongly* than the reference policy did — the policy has shifted
 probability mass toward `y_w` and away from `y_l`, relative to where the reference
-started. A negative `z` means the opposite: the policy has drifted toward the
-rejected response, or away from the preference the reference already had.
+started. A negative `z` means the opposite: the policy prefers the chosen response
+less strongly than the reference did (or has reversed the ranking).
 
 **Why does DPO compare the current policy against a reference policy?**
 
@@ -45,37 +45,40 @@ without needing a separate reward model or an RL training loop.
 
 `beta` scales how strongly the loss reacts to a given policy–reference gap —
 in effect, the strength of the implicit KL penalty against the reference.
-Higher `beta` makes the logit swing more sharply for the same underlying
+A higher `beta` makes the logit swing more sharply for the same underlying
 log-probability difference, so the model is pushed harder to satisfy
 preferences but is also more sharply penalized for drifting from the
-reference. Lower `beta` flattens that response, letting the policy move
+reference. A lower `beta` flattens that response, letting the policy move
 further from the reference before the loss reacts strongly.
 
 **Low-loss vs. high-loss example**
 
-Using the toy dataset below (`beta = 0.1`):
+Toy experiment results (`beta = 0.5`, 12 preference pairs, mean loss = `0.6371`,
+preference accuracy = `0.583`):
 
-| Example | policy(chosen) | policy(rejected) | ref(chosen) | ref(rejected) | logit | loss |
-|---|---|---|---|---|---|---|
-| A — policy strongly learned the preference | -1.0 | -4.0 | -2.0 | -2.2 | **0.2800** | **0.5629** |
-| E — policy strongly reversed the preference | -4.0 | -0.5 | -2.0 | -2.2 | **-0.3700** | **0.8952** |
+| Example | logit | loss | prompt |
+|---|---|---|---|
+| **ex04** (lowest loss) | **0.400** | **0.513** | Why keep a reference policy in DPO? |
+| **ex11** (highest loss) | **-0.250** | **0.826** | What does a negative DPO margin suggest? |
 
-- In **Example A** (low loss), the policy assigns the chosen response a much
-  higher log-probability than the rejected one (`-1.0` vs. `-4.0`, a gap of
-  `3.0`), compared to the reference's much smaller gap (`-2.0` vs. `-2.2`, a
-  gap of `0.2`). The policy has *improved* its relative preference for the
-  chosen response far beyond what the reference already showed, producing a
-  strongly positive logit (`0.28`) and pushing the loss down toward `0`
-  (`0.5629`, well below `log 2 ≈ 0.693`, the loss at a zero logit).
+- **ex04** has the most positive logit in the set (`0.400`) and correspondingly
+  the lowest loss (`0.513`, below `log 2 ≈ 0.693`). A positive logit means the
+  policy assigns a larger relative advantage to the chosen response over the
+  rejected response than the reference policy did — the policy moved in
+  exactly the direction the preference data calls for, so the loss is small.
+  Since `loss = log(1 + exp(-logit))`, a larger positive logit drives
+  `exp(-logit)` toward 0, pushing the loss toward 0.
 
-- In **Example E** (high loss), the policy has flipped the ranking entirely:
-  it now scores the rejected response much higher than the chosen one
-  (`-0.5` vs. `-4.0`), the opposite of what the preference data calls for.
-  This produces a negative logit (`-0.37`) and a loss (`0.8952`) noticeably
-  above `log 2`, correctly signaling that this example is being penalized —
-  the policy needs to correct course on this pair.
+- **ex11** has the most negative logit (`-0.250`) and the highest loss
+  (`0.826`, above `log 2`). A negative logit means the policy prefers the
+  chosen response *less* strongly than the reference did for this pair — the
+  ranking may even be reversed relative to what the training data wants.
+  Because the logit is negative, `exp(-logit)` grows larger than 1, pushing
+  the loss above `log 2` — this example is penalized, and its gradient will
+  push the policy to widen the chosen/rejected log-probability gap.
 
-Together, these confirm the objective's behavior: loss shrinks as the policy's
-preference for the chosen response strengthens relative to the reference, and
-grows as the policy drifts toward or reverses the rejected response — exactly
-the ranking signal DPO is designed to enforce.
+The full table confirms the monotonic relationship the objective is designed
+to enforce: every example with a positive logit (ex01, ex02, ex04, ex05, ex07,
+ex09) has loss below `0.693`, and every example with a negative logit (ex03,
+ex06, ex08, ex10, ex11) has loss above `0.693` — loss decreases smoothly as
+the logit increases.
