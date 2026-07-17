@@ -36,6 +36,7 @@ def dpo_logits(
         - (log pi_ref(chosen) - log pi_ref(rejected))
     ]
     """
+    
     if beta <= 0:
         raise ValueError("beta must be positive")
 
@@ -93,7 +94,23 @@ def dpo_loss(
         -log(sigmoid(z)) = log(1 + exp(-z)) = np.logaddexp(0, -z)
     """
     # TODO: replace this with your implementation.
-    raise NotImplementedError("Implement dpo_loss in src/dpo_objective.py")
+
+    policy_diff = policy_chosen_logprob - policy_rejected_logprob
+    ref_diff = ref_chosen_logprob - ref_rejected_logprob
+    
+    # 2. Compute the DPO logit (the value inside the sigmoid)
+    dpo_logit = beta * (policy_diff - ref_diff)
+    
+    # 3. Compute the loss: -log(sigmoid(dpo_logit))
+    # We use a numerically stable approach to avoid overflow when dpo_logit is a large negative number:
+    # -log(sigmoid(x)) = -log(1 / (1 + exp(-x))) = log(1 + exp(-x))
+    if dpo_logit >= 0:
+        loss = math.log1p(math.exp(-dpo_logit))
+    else:
+        # log(1 + exp(-x)) = -x + log(1 + exp(x)) for x < 0
+        loss = -dpo_logit + math.log1p(math.exp(dpo_logit))
+        
+    return loss
 
 
 def preference_accuracy(
