@@ -1,1 +1,15 @@
-# DPOO
+What does a positive DPO logit mean?
+In DPO, the "logit" fed into the loss is:  
+logit = beta * [ (log π(y_w|x) - log π_ref(y_w|x)) - (log π(y_l|x) - log π_ref(y_l|x)) ]  
+where y_w is the preferred (winning) response and y_l is the dispreferred (losing) response. A positive logit means the policy has increased its relative preference for the chosen response over the rejected one, compared to how the reference model treated that same pair. In other words, the current policy has moved in the correct direction relative to the reference: it's assigning more extra probability (relative to the reference) to the winning response than to the losing one. The larger the positive logit, the more confidently the model has learned to separate the good response from the bad one, which drives the loss toward zero (since DPO's loss is -log σ(logit), and σ(logit) → 1 as the logit grows positive).  
+Why does DPO compare the current policy against a reference policy?  
+The reference policy (usually the original SFT checkpoint before preference training) serves as an anchor to prevent the policy from drifting too far from a reasonable, fluent starting distribution while it's being optimized on preference pairs. Without the reference term, the loss could be minimized simply by making log π(y_w) arbitrarily large and log π(y_l) arbitrarily small in an absolute sense — i.e., the model could collapse toward degenerate behavior (e.g., always outputting the same few high-reward tokens) rather than genuinely learning a preference ranking. By subtracting the reference model's log-probabilities, DPO measures the change relative to the reference, which is mathematically equivalent to the implicit KL-regularized reward that RLHF (via PPO) also optimizes for — DPO just achieves it without needing an explicit reward model or PPO's RL loop.  
+What does the beta parameter control?  
+beta controls the strength of the KL penalty against the reference policy, i.e., how much the model is allowed to deviate from the reference model's original behavior in order to satisfy the preference signal.  
+
+A high beta makes the loss very sensitive to small differences between the policy and reference log-probabilities, effectively imposing a stronger constraint to stay close to the reference — safer, more conservative updates.  
+A low beta relaxes that constraint, allowing the policy to move further from the reference model to satisfy preferences more aggressively, at the risk of larger, potentially destabilizing updates or reward over-optimization.  
+
+It plays exactly the same role as the KL coefficient in standard RLHF — just baked directly into DPO's closed-form loss rather than being enforced via an explicit KL penalty term in an RL objective.  
+Low-loss vs. high-loss example  
+This one I can only answer properly with your actual toy experiment's numbers — could you share the output/log from running your toy experiment (or the src/dpo_objective.py file itself)? Once I have real logit/loss values from your run, I'll pick a genuine low-loss and high-loss pair and explain concretely why the logits/loss differ for those specific examples, rather than giving a generic answer that might not match your actual results.
