@@ -1,3 +1,24 @@
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/18ac56c9-d112-4e12-aa02-7174b7edd37b" />
+
+
+Loaded 12 preference pairs  
+beta: 0.5  
+mean DPO loss: 0.6371  
+preference accuracy from DPO logits: 0.583  
+
+Per-example diagnostics:
+ex01: logit= 0.350, loss= 0.533, prompt=Explain why RLHF can be unstable.  
+ex02: logit= 0.250, loss= 0.576, prompt=What is Direct Preference Optimization?  
+ex03: logit=-0.050, loss= 0.718, prompt=Summarize the main advantage of pairwise preference training.  
+ex04: logit= 0.400, loss= 0.513, prompt=Why keep a reference policy in DPO?  
+ex05: logit= 0.300, loss= 0.554, prompt=What does beta control in DPO?  
+ex06: logit=-0.075, loss= 0.731, prompt=Define a chosen response in preference data.  
+ex07: logit= 0.300, loss= 0.554, prompt=Explain why scalar reward RL can be difficult for language models.  
+ex08: logit=-0.150, loss= 0.771, prompt=What is a rejected response?  
+ex09: logit= 0.350, loss= 0.533, prompt=Why might DPO be easier to implement than PPO-based RLHF?  
+ex10: logit=-0.125, loss= 0.758, prompt=What is the intuition behind the DPO objective?   
+ex11: logit=-0.250, loss= 0.826, prompt=What does a negative DPO margin suggest?  
+
 ## Brief answers
 
 **What does a positive DPO logit mean?**
