@@ -1,6 +1,7 @@
+The output of pytest -q (same as  python -m pytest)
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/18ac56c9-d112-4e12-aa02-7174b7edd37b" />
 
-
+## The output of the toy experiment command:##
 Loaded 12 preference pairs  
 beta: 0.5  
 mean DPO loss: 0.6371  
